@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LumaXMB — XMB Replica (960×544)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#000;overflow:hidden;font-family:"Segoe UI",Helvetica,Arial,sans-serif;color:#fff}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000}
+#stage{position:relative;width:960px;height:544px;flex:0 0 auto;transform-origin:center;overflow:hidden;background:linear-gradient(180deg,var(--bg1),var(--bg2) 62%,var(--bg3));transition:background 0.6s;--bg1:#000;--bg2:#020a06;--bg3:#02150c;--wave:#3dff9e;--wave2:#0aff7a;--dim:#aaa;--panel:rgba(0,0,0,.28)}
+#stage[data-theme="pearl"] #panel{background:rgba(255,255,255,.62)} #stage[data-theme="champagne"] #panel{background:rgba(90,65,25,.35)} #stage[data-theme="pearl"]{--bg1:#f2f2f0;--bg2:#dfe3e1;--bg3:#c9cdc9;--wave:#ffffff;--wave2:#e8ecea;--dim:#777;--panel:rgba(255,255,255,.34)}
+#stage[data-theme="champagne"]{--bg1:#e6d9bd;--bg2:#d8c8a8;--bg3:#c9b489;--wave:#b08d57;--wave2:#ffe9b8;--dim:#fff8e7;--panel:rgba(120,90,40,.18)}
+#stage[data-theme="navy"]{--bg1:#08224e;--bg2:#041634;--bg3:#020914;--wave:#dbeaff;--wave2:#6ea8ff;--dim:#aebdd2;--panel:rgba(2,10,30,.35)}
+#stage[data-theme="burgundy"]{--bg1:#2a0618;--bg2:#1c0411;--bg3:#12030c;--wave:#ff7a9a;--wave2:#a02048;--dim:#c9a3b2;--panel:rgba(30,0,14,.32)}
+#fade{position:absolute;inset:0;background:var(--bg2);opacity:0;pointer-events:none;transition:opacity .28s;z-index:40}
+#banner{position:absolute;inset:0;opacity:0;transition:opacity .7s;z-index:1;background-size:cover;background-position:center}
+#banner.on{opacity:1}
+#banner .blabel{position:absolute;right:28px;bottom:54px;font-size:28px;font-weight:600;letter-spacing:.04em;text-shadow:0 2px 18px rgba(0,0,0,.8);opacity:.92}
+#banner .bgrad{position:absolute;inset:0}
+#waves{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:.95}
+#ui{position:absolute;inset:0;z-index:5}
+#status{position:absolute;top:14px;right:18px;display:flex;gap:9px;align-items:center;font-size:16px;text-shadow:0 0 6px rgba(255,255,255,.5);z-index:20}
+.batt{width:26px;height:13px;border:1.6px solid #fff;border-radius:2px;position:relative;opacity:.9}
+.batt:after{content:"";position:absolute;right:-5px;top:3px;width:3px;height:5px;background:#fff;border-radius:0 2px 2px 0}
+.batt i{position:absolute;left:2px;top:2px;bottom:2px;width:75%;background:#fff;opacity:.85}
+#catbar{position:absolute;top:118px;left:0;height:86px;width:100%;z-index:10}
+#catTrack{position:absolute;top:0;left:0;display:flex;transition:transform .55s cubic-bezier(.22,.9,.28,1);will-change:transform}
+.cat{width:92px;flex:0 0 92px;display:flex;flex-direction:column;align-items:center;cursor:pointer;color:#c8c8c8;opacity:.72;transition:opacity .3s,color .3s,transform .3s}
+.cat svg{width:42px;height:42px;filter:drop-shadow(0 0 2px rgba(0,0,0,.35))}
+.cat.sel{color:#fff;opacity:1;transform:scale(1.14)}
+.cat .clab{margin-top:9px;font-size:15px;opacity:0;transition:opacity .25s;white-space:nowrap}
+.cat.sel .clab{opacity:1;text-shadow:0 0 8px rgba(255,255,255,.95),0 0 20px rgba(255,255,255,.6);animation:breathe 1.8s ease-in-out infinite}
+@keyframes breathe{0%,100%{text-shadow:0 0 6px rgba(255,255,255,.7)}50%{text-shadow:0 0 14px rgba(255,255,255,1),0 0 28px rgba(255,255,255,.75)}}
+#sub{position:absolute;top:238px;z-index:9;min-width:520px;transition:opacity .28s,transform .28s}
+#sub.switch{opacity:0;transform:translateY(8px)}
+.srow{display:flex;align-items:center;gap:16px;height:59px;cursor:pointer;color:var(--dim);font-size:21px}
+.srow .sic{width:46px;height:40px;flex:0 0 46px;display:flex;align-items:center;justify-content:center;color:inherit}
+.srow .sic svg{width:36px;height:36px}
+.srow small{display:block;font-size:11px;opacity:.75;margin-top:3px;letter-spacing:.02em}
+.srow.sel{color:#fff;text-shadow:0 0 8px rgba(255,255,255,.95),0 0 18px rgba(255,255,255,.5);animation:breathe 1.8s ease-in-out infinite}
+.srow .thumb{width:66px;height:36px;flex:0 0 66px;border-radius:3px;background:linear-gradient(135deg,#375,#123 60%,#89a);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
+#crumb{position:absolute;top:226px;font-size:11px;color:var(--dim);z-index:9}
+#panel{position:absolute;top:0;right:0;width:308px;height:100%;z-index:15;background:var(--panel);backdrop-filter:blur(2px);border-left:1px solid rgba(255,255,255,.65);transform:translateX(105%);transition:transform .5s cubic-bezier(.22,.9,.28,1);padding:64px 26px;background:rgba(0,0,0,.52);backdrop-filter:blur(9px)}
+#panel.open{transform:none}
+#panel .pk{font-size:12px;color:var(--dim)} #panel h2{font-size:19px;margin:10px 0 8px;font-weight:600}
+.prow{height:38px;display:flex;align-items:center;font-size:15px;color:var(--dim);cursor:pointer}
+.prow.sel{color:#fff;font-weight:600;text-shadow:0 0 9px rgba(255,255,255,.95)}
+.prow.ctx{font-size:12px;height:26px}
+#hint{position:absolute;left:16px;bottom:12px;font-size:11px;color:rgba(255,255,255,.55);z-index:20;text-shadow:0 1px 4px #000}
+#toast{position:absolute;left:50%;bottom:42px;transform:translate(-50%,16px);background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.35);padding:9px 16px;border-radius:20px;font-size:13px;opacity:0;transition:.3s;z-index:30;pointer-events:none;max-width:82%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#app{position:absolute;inset:0;z-index:25;background:linear-gradient(180deg,rgba(0,0,0,.93),rgba(2,18,10,.96));padding:34px 48px;opacity:0;pointer-events:none;transition:opacity .35s}
+#app.on{opacity:1;pointer-events:auto}
+#app h1{font-size:28px;font-weight:600} #app .rule{height:1px;background:rgba(255,255,255,.55);width:72%;margin:12px 0 8px}
+#app .sub2{color:#aaa;font-size:13px;margin-bottom:18px;display:flex;justify-content:space-between;width:72%}
+.arow{width:72%;height:39px;display:flex;align-items:center;gap:12px;color:#aaa;font-size:15px;padding:0 10px;cursor:pointer}
+.arow.sel{color:#fff;background:#333;border:1.5px solid #fff;border-radius:4px;text-shadow:0 0 8px #fff}
+#app .foot{position:absolute;bottom:20px;font-size:11px;color:#888}
+#player{text-align:left;margin-top:8px;color:#ddd}
+#player .controls{margin-top:26px;font-size:22px;letter-spacing:14px;color:#fff}
+progress{width:72%;height:3px}
+</style></head>
+<body><div id="wrap"><div id="stage" data-theme="emerald">
+<div id="banner"><div class="bgrad"></div><div class="blabel"></div></div>
+<canvas id="waves" width="960" height="544"></canvas>
+<div id="ui">
+ <div id="status"><span id="clock">22:07</span><span class="batt"><i></i></span></div>
+ <div id="catbar"><div id="catTrack"></div></div>
+ <div id="crumb"></div><div id="sub"></div>
+ <div id="panel"><div class="pk">Settings</div><h2>Global presets</h2><div id="plist"></div></div>
+ <div id="app"></div>
+ <div id="toast"></div>
+ <div id="hint">← → 分类 &nbsp; ↑ ↓ 子菜单 &nbsp; Enter / X 打开 &nbsp; Esc 返回 &nbsp;·&nbsp; 鼠标点击 / 滚轮亦可 &nbsp;·&nbsp; Settings → Background &amp; waves → 预设面板</div>
+</div><div id="fade"></div>
+</div></div>
+<script>
+const $=s=>document.querySelector(s);
+const ICONS={
+home:'<svg viewBox="0 0 48 48" fill="currentColor"><rect x="5" y="5" width="38" height="38" rx="10"/><circle cx="17" cy="20" r="3" fill="var(--bg2)"/><circle cx="31" cy="20" r="3" fill="var(--bg2)"/><path d="M15 29q9 8 18 0" stroke="var(--bg2)" stroke-width="3.4" fill="none" stroke-linecap="round"/></svg>',
+settings:'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3"><rect x="6" y="16" width="36" height="22" rx="3" fill="currentColor" stroke="none"/><path d="M17 16v-3a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v3M6 25h36M21 25h6v6h-6z" fill="none"/></svg>',
+photo:'<svg viewBox="0 0 48 48" fill="currentColor"><rect x="5" y="13" width="38" height="27" rx="4"/><circle cx="24" cy="27" r="7" fill="var(--bg2)"/><rect x="17" y="8" width="14" height="7" rx="2"/></svg>',
+music:'<svg viewBox="0 0 48 48" fill="currentColor"><path d="M19 36V12l20-4v22"/><circle cx="14" cy="36" r="6"/><circle cx="34" cy="30" r="6"/></svg>',
+video:'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3"><rect x="6" y="11" width="36" height="26" rx="2"/><path d="M14 11v26M34 11v26M6 19h8M6 29h8M34 19h8M34 29h8"/></svg>',
+games:'<svg viewBox="0 0 48 48" fill="currentColor"><path d="M14 14h20a12 12 0 0 1 11 14c-1 6-6 8-10 4l-3-3H16l-3 3c-4 4-9 2-10-4A12 12 0 0 1 14 14z"/><circle cx="35" cy="22" r="2" fill="var(--bg2)"/><circle cx="40" cy="27" r="2" fill="var(--bg2)"/><path d="M14 20v8M10 24h8" stroke="var(--bg2)" stroke-width="2.4"/></svg>',
+play:'<svg viewBox="0 0 48 48" fill="currentColor"><path d="M17 9l24 15-24 15z"/></svg>',
+network:'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6"><circle cx="24" cy="24" r="17"/><path d="M7 24h34M24 7c6 6 6 28 0 34-6-6-6-28 0-34z"/></svg>',
+discord:'<svg viewBox="0 0 48 48" fill="currentColor"><path d="M10 12a28 28 0 0 1 28 0c4 8 5 16 4 24-5 3-9 4-12 4l-2-4a22 22 0 0 1-8 0l-2 4c-3 0-7-1-12-4-1-8 0-16 4-24z"/><circle cx="17" cy="24" r="3" fill="var(--bg2)"/><circle cx="31" cy="24" r="3" fill="var(--bg2)"/></svg>',
+fav:'<svg viewBox="0 0 48 48" fill="currentColor"><rect x="5" y="5" width="38" height="38" rx="10"/><path d="M24 12l3.6 7.6 8.4 1-6.2 5.8 1.6 8.3L24 30.6l-7.4 4.1 1.6-8.3L12 20.6l8.4-1z" fill="var(--bg2)"/></svg>',
+folder:'<svg viewBox="0 0 48 48" fill="currentColor"><path d="M5 12a3 3 0 0 1 3-3h11l5 6h16a3 3 0 0 1 3 3v20a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z" opacity=".9"/></svg>',
+cube:'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M24 5l17 9v20L24 43 7 34V14zM7 14l17 9 17-9M24 23v20"/></svg>',
+wave:'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 18q7-9 14 0t14 0 12-2M4 29q7-9 14 0t14 0 12-2"/></svg>',
+orbit:'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6"><circle cx="24" cy="24" r="5" fill="currentColor"/><circle cx="24" cy="24" r="12"/><circle cx="24" cy="24" r="19" opacity=".6"/></svg>',
+palette:'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6"><circle cx="24" cy="24" r="18"/><circle cx="17" cy="18" r="2.4" fill="currentColor"/><circle cx="27" cy="15" r="2.4" fill="currentColor"/><circle cx="32" cy="25" r="2.4" fill="currentColor"/></svg>',
+card:'<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.6"><rect x="7" y="12" width="34" height="24" rx="3"/><path d="M7 21h34M13 30h9"/></svg>',
+generic:'<svg viewBox="0 0 48 48" fill="currentColor"><rect x="9" y="7" width="30" height="34" rx="5" opacity=".85"/><circle cx="24" cy="20" r="5" fill="var(--bg2)"/></svg>'};
+const CATS=[
+{id:'home',label:'Home',icon:'home',items:[['Relax in orbit','home'],['LiveArea (PS button)','home'],['File manager','folder'],['Demo Mode','home']]},
+{id:'settings',label:'Settings',icon:'settings',items:[['Appearance','cube','Shared icons, text and layout throughout the XMB'],['Background & waves','wave'],['Orbit','orbit'],['Audio','music']]},
+{id:'photo',label:'Photo',icon:'photo',items:[['Memory Stick','folder'],['All Photos','photo'],['Screenshots','photo']]},
+{id:'music',label:'Music',icon:'music',items:[['Memory Stick','folder'],['BADBADNOTGOOD','music',,'g1'],['Beach Fossils','music',,'g2'],['Beach House','music',,'g3'],['Blood Orange','folder',,'g4'],['Disclosure','music',,'g5']]},
+{id:'video',label:'Video',icon:'video',items:[['Memory Stick','folder'],['YouTube','play'],['F1-Bahrain-2019-PS-Vita-960x544-50fps','video',,'f1']]},
+{id:'games',label:'Games',icon:'games',items:[['Memory Stick','card','12? items'],['Adrenaline','generic'],['Vita Games','folder'],['Homebrew Games','folder'],['PSP/Adrenaline Games','folder'],['Emulators','folder'],['Save Data Management','card']]},
+{id:'play',label:'',icon:'play',items:[['Now Playing','music'],['vitaTUBE','play'],['Continue','video']]},
+{id:'network',label:'Network',icon:'network',items:[['FTP: 192.168.1.77:1337 · Off (0 connected)','network'],['File Manager','folder'],['YouTube','play'],['vitaLINK','orbit']]},
+{id:'discord',label:'Discord',icon:'discord',items:[['Alex: Welcome back!','discord'],['Sam: Ready to play?','discord'],['Mika: See you later','discord'],['Alex · PSP library','discord'],['Sam · Remote play','discord'],['Mika · Listening to music','discord'],['Back','generic']]},
+{id:'fav',label:'Favorites',icon:'fav',items:[['Favorite Games','fav'],['Favorite Apps','fav'],['FINAL FANTASY X','games'],['Gundam Battle Royale','games'],['Emulators','games']]}];
+const PRESETS=[['OLED Emerald','emerald',1],['Pearl','pearl'],['Champagne','champagne'],['OLED Emerald','emerald'],['PS3 Navy','navy'],['PS3 Burgundy','burgundy'],['Reset to default (Pearl)','pearl']];
+const BANNERS={'Memory Stick':[null,'Gundam Battle Royale','#234','#48c'],'Adrenaline':[null,'ADRENALINE','#3b1470','#a06bff'],'Vita Games':[null,'Gundam Battle Royale','#234','#48c'],'Homebrew Games':[null,'Homebrew Games','#263','#7d5'],'PSP/Adrenaline Games':[null,'PSP / Adrenaline Games','#421','#f83'],'Emulators':[null,'Emulators','#263','#8cf'],'FINAL FANTASY X':[null,'FINAL FANTASY X','#dfe9f5','#39c'],'Gundam Battle Royale':[null,'Gundam Battle Royale','#421','#f63'],'Favorite Games':[null,'Favorite Games','#123','#5af']};
+let ci=5,si=0,panelOpen=false,pi=3,appOpen=false,audioCtx=null;
+const track=$('#catTrack'),sub=$('#sub'),stage=$('#stage');
+CATS.forEach((c,i)=>{const d=document.createElement('div');d.className='cat';d.innerHTML=ICONS[c.icon]+'<div class="clab">'+c.label+'</div>';d.onclick=()=>{unlock();if(ci!==i){ci=i;si=0;render()}else openSel()};track.appendChild(d)});
+PRESETS.forEach((p,i)=>{const d=document.createElement('div');d.className='prow'+(i==0?' ctx':'');d.textContent=p[0];d.onclick=()=>{pi=i;applyPreset()};$('#plist').appendChild(d)});
+function render(){
+ [...track.children].forEach((e,i)=>e.classList.toggle('sel',i===ci));
+ const anchor=280; track.style.transform=`translateX(${anchor-ci*92-46}px)`;
+ sub.style.left=(anchor-34)+'px'; $('#crumb').style.left=(anchor-90)+'px';
+ $('#crumb').textContent=(CATS[ci].id==='games'&&si>=3)?'<  '+CATS[ci].items[si][0]:(CATS[ci].id==='music'?'Memory Stick':(CATS[ci].id==='video'&&si===2?'<  F1 Bahrain 2019':''));
+ sub.innerHTML=''; CATS[ci].items.forEach((it,i)=>{const r=document.createElement('div');r.className='srow'+(i===si?' sel':'');
+  r.innerHTML=(it[3]?'<span class="thumb" style="background:linear-gradient(135deg,'+(it[3]==='f1'?'#557,#112':['#567','#789','#345','#654','#476'][i%5])+',#111)"></span>':'<span class="sic">'+ICONS[it[1]||'generic']+'</span>')+'<span>'+it[0]+(it[2]?'<small>'+it[2]+'</small>':'')+'</span>';
+  r.onclick=()=>{unlock();si=i;render();}; r.ondblclick=openSel; sub.appendChild(r)});
+ updateBanner(); [...$('#plist').children].forEach((e,i)=>e.classList.toggle('sel',i===pi)); click(660,.04);
+}
+function updateBanner(){
+ const name=CATS[ci].items[si][0]; const b=(CATS[ci].id==='games'||CATS[ci].id==='fav')?BANNERS[name]:null; const bn=$('#banner');
+ if(!b){bn.classList.remove('on');$('#ui').style.opacity='1';return}
+ bn.querySelector('.blabel').textContent=b[1];
+ bn.querySelector('.bgrad').style.background=b[0]?'linear-gradient(90deg,rgba(0,0,0,.25),transparent)':`linear-gradient(135deg,${b[2]},${b[3]} 55%,#0a0f18)`;
+ bn.style.backgroundImage=b[0]?`url("${b[0]}")`:'none'; bn.classList.add('on');
+ $('#ui').style.opacity='.92';
+}
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2400)}
+function applyPreset(){const p=PRESETS[pi];$('#fade').style.opacity=1;setTimeout(()=>{stage.dataset.theme=p[1];renderPreset();$('#fade').style.opacity=0},260);toast('Theme: '+p[0]);click(880,.06)}
+function renderPreset(){[...$('#plist').children].forEach((e,i)=>e.classList.toggle('sel',i===pi))}
+const APPS={'FTP: 192.168.1.77:1337 · Off (0 connected)':['FTP Manager','192.168.1.77:1337|Off · 0 connected',['Start/stop FTP','Browse storage','Restart FTP service','USB connection','Reset to default','Return to XMB'],'Demo preview · FTP connection and information'],
+'File Manager':['File Manager','Demo files / Memory Stick / Music',['Aurora album','Silver Light.m4a','Orbit.m4a','Dawn Chorus.m4a','Album cover.jpg'],'Demo preview · Sample folders and files'],
+'File manager':['File Manager','Demo files / Memory Stick / Music',['Aurora album','Silver Light.m4a','Orbit.m4a','Dawn Chorus.m4a','Album cover.jpg'],'Demo preview · Sample folders and files'],
+'vitaLINK':['vitaLINK','Hosts',['DESKTOP-K1V0JMS.local … Offline','MacBook Pro','Add host','Find hosts','Streaming settings','Appearance & sound','Controls & hotkeys','Exit vitaLINK'],'Demo preview · Moonlight hosts'],
+'YouTube':['vitaTUBE','Recommended · Apple TV inspired',['Qualifying Highlights | 2026 Singapore Grand Prix','Steam Decks are about to be EVERYWHERE','Playstation 3 (PS3) Full Commercial - Rubik\'s Cube'],'Demo preview · vitaTUBE']};
+function openApp(title,subt,rows,foot){appOpen=true;const a=$('#app');a.innerHTML=`<h1>${title}</h1><div class="rule"></div><div class="sub2"><span>${subt.split('|')[0]||''}</span><span>${subt.split('|')[1]||''}</span></div>`+rows.map((r,i)=>`<div class="arow${i===0?' sel':''}">${r}</div>`).join('')+`<div class="foot">${foot} · Esc / ○ 返回 XMB</div>`;a.classList.add('on');a.querySelectorAll('.arow').forEach((e,i)=>e.onclick=()=>{a.querySelectorAll('.arow').forEach(x=>x.classList.remove('sel'));e.classList.add('sel');click(760,.05)})}
+function openSel(){
+ const name=CATS[ci].items[si][0];
+ if(panelOpen){applyPreset();return}
+ if(CATS[ci].id==='settings'&&si===1){panelOpen=true;$('#panel').classList.add('open');renderPreset();toast('Global preset — ← → 或 Enter 切换主题');return}
+ if(CATS[ci].id==='music'&&si>0){openApp('Music Player','No Vacation — Waltzing Back',['Waltzing Back — No Vacation'],'<div id="player"><div>♪ Waltzing Back</div><div class="controls">|◀ ◀◀ ❚❚ ▶| ▶ ■</div><br><progress value="3" max="192"></progress><div>00:00:03 / 00:03:12</div></div>');return}
+ if(APPS[name]){const a=APPS[name];openApp(a[0],a[1],a[2],a[3]);return}
+ if(CATS[ci].id==='discord'){toast('Discord · Demo preview — '+name);return}
+ toast((CATS[ci].id==='games'?'Launching · ':'Opening · ')+name+'  ·  Demo preview');
+}
+function closeTop(){if(appOpen){appOpen=false;$('#app').classList.remove('on');return true}if(panelOpen){panelOpen=false;$('#panel').classList.remove('open');return true}return false}
+function move(dx,dy){
+ if(appOpen)return;
+ if(panelOpen){ if(dy)pi=(pi+dy+PRESETS.length)%PRESETS.length,renderPreset(),click(700,.04); if(dx){pi=(pi+dx+PRESETS.length)%PRESETS.length;applyPreset()} return}
+ if(dx){ci=(ci+dx+CATS.length)%CATS.length;si=0;sub.classList.add('switch');setTimeout(()=>sub.classList.remove('switch'),180)}
+ if(dy){si=(si+dy+CATS[ci].items.length)%CATS[ci].items.length}
+ render();
+}
+addEventListener('keydown',e=>{unlock();if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key))e.preventDefault();
+ if(e.key==='ArrowLeft')move(-1,0);else if(e.key==='ArrowRight')move(1,0);else if(e.key==='ArrowUp')move(0,-1);else if(e.key==='ArrowDown')move(0,1);
+ else if(e.key==='Enter'||e.key.toLowerCase()==='x')openSel();else if(e.key==='Escape'||e.key.toLowerCase()==='o')closeTop();});
+$('#stage').addEventListener('wheel',e=>{e.preventDefault();move(0,e.deltaY>0?1:-1)},{passive:false});
+function unlock(){if(!audioCtx){try{audioCtx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}} if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume()}
+function click(f=700,d=.05){if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.06,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+d);o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+d)}
+// clock
+function tick(){const d=new Date();$('#clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}tick();setInterval(tick,10000);
+// waves: crossing emerald ribbons
+const cv=$('#waves'),ctx=cv.getContext('2d');let t=0;
+function waveColor(a){const th=stage.dataset.theme; if(th==='pearl')return`rgba(255,255,255,${a})`; if(th==='champagne')return`rgba(176,141,87,${a})`; if(th==='navy')return`rgba(180,215,255,${a})`; if(th==='burgundy')return`rgba(255,110,150,${a})`; return`rgba(61,255,158,${a})`}
+function draw(){t+=.008;ctx.clearRect(0,0,960,544);
+ for(let k=0;k<3;k++){ctx.beginPath();for(let x=0;x<=960;x+=4){const y=330+k*28+Math.sin(x*.006+t*(1+k*.25)+k*2)*26+Math.sin(x*.0025-t*.7+k)*18;x?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.strokeStyle=waveColor(.10+k*.05);ctx.lineWidth=20-k*4;ctx.filter='blur(7px)';ctx.stroke();ctx.filter='none';ctx.strokeStyle=waveColor(.55-k*.1);ctx.lineWidth=1.7;ctx.stroke()}
+ // crossing ribbon (Settings-like X)
+ ctx.beginPath();for(let x=0;x<=960;x+=4){const y=360+Math.sin(x*.005+t)*34;x?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.strokeStyle=waveColor(.28);ctx.lineWidth=1.2;ctx.stroke();
+ ctx.beginPath();for(let x=0;x<=960;x+=4){const y=360+Math.sin(x*.005 - t + Math.PI)*34;x?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.strokeStyle=waveColor(.18);ctx.lineWidth=1.2;ctx.stroke();
+ requestAnimationFrame(draw)}
+draw();
+// optional deep link, e.g. ?cat=settings&sub=1&panel=1
+const q=new URLSearchParams(location.search); const qc=CATS.findIndex(c=>c.id===q.get('cat')); if(qc>=0){ci=qc;si=Math.min(+(q.get('sub')||0),CATS[ci].items.length-1)} render();
+if(q.get('panel')==='1'&&CATS[ci].id==='settings'){panelOpen=true;$('#panel').classList.add('open');renderPreset()}
+// scale to fit
+function fit(){const s=Math.min(innerWidth/960,innerHeight/544);$('#stage').style.transform=`scale(${s})`}addEventListener('resize',fit);fit();
+</script></body></html>
