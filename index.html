@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LumaXMB — XMB Replica (960×544)</title><!-- lumaxmb-v2-icons -->
+<title>LumaXMB — XMB Replica (960×544)</title><!-- lumaxmb-v3-silk -->
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:#000;overflow:hidden;font-family:"Segoe UI",Helvetica,Arial,sans-serif;color:#fff}
@@ -163,14 +163,61 @@ function unlock(){if(!audioCtx){try{audioCtx=new (window.AudioContext||window.we
 function click(f=700,d=.05){if(!audioCtx)return;const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=f;o.type='sine';g.gain.setValueAtTime(.06,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+d);o.connect(g).connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+d)}
 // clock
 function tick(){const d=new Date();$('#clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}tick();setInterval(tick,10000);
-// waves: crossing emerald ribbons
+// waves v3-silk: broad satin ribbons (offscreen low-res = natural silk blur)
 const cv=$('#waves'),ctx=cv.getContext('2d');let t=0;
-function waveColor(a){const th=stage.dataset.theme; if(th==='pearl')return`rgba(255,255,255,${a})`; if(th==='champagne')return`rgba(176,141,87,${a})`; if(th==='navy')return`rgba(180,215,255,${a})`; if(th==='burgundy')return`rgba(255,110,150,${a})`; return`rgba(61,255,158,${a})`}
-function draw(){t+=.008;ctx.clearRect(0,0,960,544);
- for(let k=0;k<3;k++){ctx.beginPath();for(let x=0;x<=960;x+=4){const y=330+k*28+Math.sin(x*.006+t*(1+k*.25)+k*2)*26+Math.sin(x*.0025-t*.7+k)*18;x?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.strokeStyle=waveColor(.10+k*.05);ctx.lineWidth=20-k*4;ctx.filter='blur(7px)';ctx.stroke();ctx.filter='none';ctx.strokeStyle=waveColor(.55-k*.1);ctx.lineWidth=1.7;ctx.stroke()}
- // crossing ribbon (Settings-like X)
- ctx.beginPath();for(let x=0;x<=960;x+=4){const y=360+Math.sin(x*.005+t)*34;x?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.strokeStyle=waveColor(.28);ctx.lineWidth=1.2;ctx.stroke();
- ctx.beginPath();for(let x=0;x<=960;x+=4){const y=360+Math.sin(x*.005 - t + Math.PI)*34;x?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.strokeStyle=waveColor(.18);ctx.lineWidth=1.2;ctx.stroke();
+const W=960,H=544,OW=480,OH=272,SC=OW/W;
+const off=document.createElement('canvas');off.width=OW;off.height=OH;const oc=off.getContext('2d');
+// fine grain tile
+const nz=document.createElement('canvas');nz.width=nz.height=128;{const n=nz.getContext('2d'),im=n.createImageData(128,128);for(let i=0;i<im.data.length;i+=4){const v=118+Math.random()*90;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}n.putImageData(im,0,0)}
+const PAL={emerald:{light:0,core:[205,255,226],mid:[61,255,158],deep:[0,168,92]},
+pearl:{light:1,core:[255,255,255],mid:[226,232,230],deep:[148,162,158]},
+champagne:{light:1,core:[255,240,205],mid:[196,158,96],deep:[122,88,40]},
+navy:{light:0,core:[224,240,255],mid:[110,168,255],deep:[34,84,190]},
+burgundy:{light:0,core:[255,196,210],mid:[255,110,150],deep:[150,28,68]}};
+const rgba=(c,a)=>`rgba(${c[0]},${c[1]},${c[2]},${a})`;
+// each sheet: baseY, long-wave amp, thickness(satin!), phase, drift speed, tilt
+const SHEETS=[
+ {y:318,amp:20,amp2:9,thick:172,ph:0.0,sp:0.55,crest:0.34,a:0.95},
+ {y:352,amp:26,amp2:12,thick:196,ph:2.4,sp:0.38,crest:0.42,a:0.48},
+ {y:288,amp:14,amp2:7,thick:118,ph:4.4,sp:0.72,crest:0.30,a:0.30}];
+function centerY(r,x,tt){return r.y+Math.sin(x*0.0032+tt*r.sp+r.ph)*r.amp+Math.sin(x*0.0011-tt*r.sp*0.53+r.ph*1.7)*r.amp2+Math.sin(x*0.009+tt*r.sp*0.8+r.ph)*3}
+function sheetPath(c,r,tt,dy){c.beginPath();const pts=[];for(let x=-20;x<=W+20;x+=10){const y=centerY(r,x,tt),w=r.thick*(0.88+0.16*Math.sin(x*0.0021+tt*0.4+r.ph*2));pts.push([x,y,w])}
+ pts.forEach((p,i)=>{const yy=p[1]-p[2]*r.crest+(dy||0);i?c.lineTo(p[0]*SC,yy*SC):c.moveTo(p[0]*SC,yy*SC)});
+ for(let i=pts.length-1;i>=0;i--){const p=pts[i];c.lineTo(p[0]*SC,(p[1]+p[2]*(1-r.crest)+(dy||0))*SC)}c.closePath();return pts}
+function drawSheet(c,r,tt,P){
+ const top=(r.y-r.thick)*SC,bot=(r.y+r.thick)*SC,g=c.createLinearGradient(0,top,0,bot),cr=r.crest;
+ // satin cross-section: invisible edge -> specular crest -> luminous body -> long fade
+ g.addColorStop(0,rgba(P.mid,0));g.addColorStop(Math.max(0,cr-0.16),rgba(P.mid,0.03*r.a));
+ g.addColorStop(cr-0.045,rgba(P.mid,(P.light?0.34:0.15)*r.a));g.addColorStop(cr,rgba(P.core,(P.light?0.85:0.40)*r.a));
+ g.addColorStop(cr+0.055,rgba(P.mid,(P.light?0.42:0.23)*r.a));g.addColorStop(cr+0.30,rgba(P.deep,(P.light?0.16:0.065)*r.a));
+ g.addColorStop(Math.min(0.97,cr+0.55),rgba(P.deep,(P.light?0.05:0.04)*r.a));g.addColorStop(1,rgba(P.deep,0));
+ sheetPath(c,r,tt,0);c.fillStyle=g;c.fill();
+ // soft shadow fold just under crest (gives fabric thickness on light themes too)
+ c.save();sheetPath(c,r,tt,0);c.clip();
+ for(let f=0;f<4;f++){c.beginPath();for(let x=-20;x<=W+20;x+=10){const y=centerY(r,x,tt)+14+f*30+Math.sin(x*0.004+tt*0.5+r.ph+f)*5;x>-20?c.lineTo(x*SC,y*SC):c.moveTo(x*SC,y*SC)}
+  c.strokeStyle=rgba(f%2?P.core:P.deep,(f%2?0.13:0.10)*r.a);c.lineWidth=(f%2?9:14)*SC+2;c.stroke()}
+ // travelling specular sheen along the sheet
+ const sx=((tt*36+r.ph*260)%(W+520))-260,sg=c.createLinearGradient(sx*SC,0,(sx+300)*SC,0);
+ sg.addColorStop(0,rgba(P.core,0));sg.addColorStop(0.5,rgba(P.core,P.light?0.16:0.13));sg.addColorStop(1,rgba(P.core,0));
+ c.fillStyle=sg;c.fillRect(0,0,OW,OH);c.restore();
+ // crest highlight: 2 soft strokes (low-res upscale blurs them into silk, not neon)
+ c.beginPath();for(let x=-20;x<=W+20;x+=10){const y=centerY(r,x,tt)-r.thick*r.crest*(0.88+0.16*Math.sin(x*0.0021+tt*0.4+r.ph*2));x>-20?c.lineTo(x*SC,y*SC):c.moveTo(x*SC,y*SC)}
+ c.strokeStyle=rgba(P.core,(P.light?0.55:0.68)*r.a);c.lineWidth=3.0;c.stroke();
+ c.strokeStyle=rgba(P.core,0.20*r.a);c.lineWidth=9;c.stroke();
+}
+function draw(){t+=0.0042;const P=PAL[stage.dataset.theme]||PAL.emerald;
+ oc.clearRect(0,0,OW,OH);oc.globalCompositeOperation='source-over';
+ SHEETS.forEach(r=>drawSheet(oc,r,t,P));
+ ctx.clearRect(0,0,W,H);
+ // faint large-scale sheen drifting behind UI
+ const shx=480+Math.sin(t*0.35)*260,sh=ctx.createRadialGradient(shx,330,40,shx,330,560);
+ sh.addColorStop(0,rgba(P.mid,P.light?0.10:0.07));sh.addColorStop(1,rgba(P.mid,0));ctx.fillStyle=sh;ctx.fillRect(0,0,W,H);
+ ctx.globalCompositeOperation=P.light?'source-over':'lighter';
+ ctx.globalAlpha=P.light?0.96:0.88;ctx.drawImage(off,0,0,W,H);
+ ctx.save();ctx.filter='blur(13px)';ctx.globalAlpha=P.light?0.38:0.32;ctx.drawImage(off,0,0,W,H);ctx.restore();
+ // fine silk grain
+ ctx.save();ctx.globalCompositeOperation='overlay';ctx.globalAlpha=0.045;const pat=ctx.createPattern(nz,'repeat');ctx.translate(-(t*9%128),0);ctx.fillStyle=pat;ctx.fillRect(0,180,W+128,364);ctx.restore();
+ ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
  requestAnimationFrame(draw)}
 draw();
 // optional deep link, e.g. ?cat=settings&sub=1&panel=1
